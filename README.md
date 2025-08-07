@@ -1,5 +1,6 @@
 # Building Management — Client Side
 
+## Overview
 This is the frontend of the Building Management System built using React and Vite. It allows tenants to browse and apply for apartments, pay rent, use discount coupons, and access personalized dashboards. Admins can manage announcements, users, agreements, payments, and coupons.
 
 ---
@@ -25,7 +26,7 @@ To provide an organized and secure system for managing residential buildings —
 
 ## Key Features
 
-### 🧑‍💼 Users
+### Users
 
 - Firebase login (Email/Password)
 - View available apartments with pagination and rent filters
@@ -35,7 +36,7 @@ To provide an organized and secure system for managing residential buildings —
 - View payment history
 - Access a personalized dashboard
 
-### 👨‍💼 Admin
+### Admin
 
 - Manage announcements, coupons, and apartment agreements
 - Approve/reject agreement requests
@@ -58,6 +59,12 @@ To provide an organized and secure system for managing residential buildings —
 - React Icons
 
 ---
+
+## Screenshots
+### Home
+![Apartments](public/screenshots/apartments.png)
+### Dashboard
+![Dashboard](public/screenshots/dashboard.png)
 
 ## Environment Variables
 
@@ -104,3 +111,6 @@ npm run dev
 - `npm run dev` — Start the development server
 - `npm run build` — Build the project for production
 - `npm run preview` — Preview the production build
+
+## Author
+Developed by Tanzeem Siddique
