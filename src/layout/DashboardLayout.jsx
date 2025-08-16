@@ -1,8 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { Outlet, Link, useLocation, Navigate, useNavigate } from "react-router";
 import { AuthContext } from "../providers/AuthProvider";
-
-// React Icons
 import {
   FaUser,
   FaBullhorn,
@@ -16,6 +14,8 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const DashboardLayout = () => {
   const { user, loading, logout } = useContext(AuthContext);
   const [role, setRole] = useState(null);
@@ -24,20 +24,20 @@ const DashboardLayout = () => {
 
   useEffect(() => {
     const fetchRole = async () => {
+      if (!user) return;
       try {
-        const token = await user.getIdToken();
-        const res = await fetch(
-          `https://building-management-server-woad-two.vercel.app/api/users/role`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        if (!API_URL) throw new Error("VITE_API_URL is not defined");
 
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        const contentType = res.headers.get("content-type");
-        if (!contentType.includes("application/json")) {
+        const token = await user.getIdToken();
+        const res = await fetch(`${API_URL}/api/users/role`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
           const text = await res.text();
-          throw new Error("Expected JSON but got: " + text);
+          throw new Error("Expected JSON, got: " + text);
         }
 
         const data = await res.json();
@@ -48,7 +48,7 @@ const DashboardLayout = () => {
       }
     };
 
-    if (user) fetchRole();
+    fetchRole();
   }, [user]);
 
   if (loading || (user && !role)) {

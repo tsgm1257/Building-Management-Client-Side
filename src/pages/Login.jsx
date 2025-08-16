@@ -7,6 +7,7 @@ import { app } from "../firebase/firebase.config";
 
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Login = () => {
   const { login } = useContext(AuthContext);
@@ -32,12 +33,14 @@ const Login = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
 
       // Save to database
       const token = await user.getIdToken();
-      await fetch("https://building-management-server-woad-two.vercel.app/api/users", {
+      const res = await fetch(`${API_URL}/api/users`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -47,9 +50,14 @@ const Login = () => {
           name: user.displayName,
           email: user.email,
           photoURL: user.photoURL,
-          role: "user", // default
+          role: "user",
         }),
       });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Failed to save user: ${res.status} ${text}`);
+      }
 
       toast.success("Logged in with Google!");
       navigate("/");

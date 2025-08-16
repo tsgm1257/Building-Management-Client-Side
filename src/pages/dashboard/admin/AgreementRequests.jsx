@@ -3,33 +3,45 @@ import { useContext } from "react";
 import { AuthContext } from "../../../providers/AuthProvider";
 import { FaFileSignature } from "react-icons/fa";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const AgreementRequests = () => {
   const { user } = useContext(AuthContext);
   const queryClient = useQueryClient();
-  const tokenPromise = user?.getIdToken();
 
   const { data: requests = [], isLoading } = useQuery({
     queryKey: ["agreementRequests"],
+    enabled: !!user, // don't run until user is ready
     queryFn: async () => {
-      const token = await tokenPromise;
-      const res = await fetch("https://building-management-server-woad-two.vercel.app/api/admin/agreements", {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${API_URL}/api/admin/agreements`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Failed to load requests: ${res.status} ${text}`);
+      }
       const data = await res.json();
-      // Only show pending requests since processed ones are removed
-      return data.filter((req) => req.status === "pending");
+
+      // Only show pending requests
+      return (Array.isArray(data) ? data : []).filter(
+        (req) => req.status === "pending"
+      );
     },
+    staleTime: 30_000,
   });
 
   const mutation = useMutation({
     mutationFn: async ({ id, action, email }) => {
-      const token = await tokenPromise;
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+      const token = await user.getIdToken();
 
       // Determine the role based on action
       const userRole = action === "accept" ? "member" : "user";
 
-      // Use the correct agreements route
-      const res = await fetch(`https://building-management-server-woad-two.vercel.app/api/agreements/${id}`, {
+      const res = await fetch(`${API_URL}/api/agreements/${id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -39,12 +51,12 @@ const AgreementRequests = () => {
           action,
           userEmail: email,
           status: "checked",
-          userRole: userRole,
+          userRole,
         }),
       });
 
       if (!res.ok) {
-        const errorText = await res.text();
+        const errorText = await res.text().catch(() => "");
         throw new Error(
           `Failed to update agreement: ${res.status} ${errorText}`
         );
@@ -53,7 +65,7 @@ const AgreementRequests = () => {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["agreementRequests"]);
+      queryClient.invalidateQueries({ queryKey: ["agreementRequests"] });
     },
     onError: (error) => {
       console.error("Error updating agreement:", error);

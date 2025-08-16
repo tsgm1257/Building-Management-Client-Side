@@ -5,6 +5,8 @@ import { useApartments } from "../hooks/useApartments";
 import toast from "react-hot-toast";
 import { FaMoneyBillWave, FaRegHandshake } from "react-icons/fa";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Apartments = () => {
   const [page, setPage] = useState(1);
   const [minRent, setMinRent] = useState("");
@@ -29,53 +31,47 @@ const Apartments = () => {
     if (!user) return navigate("/login");
 
     try {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+
       const token = await user.getIdToken();
-      const res = await fetch(
-        "https://building-management-server-woad-two.vercel.app/api/agreements",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            userName: user.displayName,
-            userEmail: user.email,
-            floor: apartment.floor,
-            block: apartment.block,
-            number: apartment.number,
-            rent: apartment.rent,
-            status: "pending",
-          }),
-        }
-      );
+      const res = await fetch(`${API_URL}/api/agreements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userName: user.displayName,
+          userEmail: user.email,
+          floor: apartment.floor,
+          block: apartment.block,
+          number: apartment.number,
+          rent: apartment.rent,
+          status: "pending",
+        }),
+      });
 
       if (res.ok) {
         toast.success("Agreement request submitted!");
         setSubmittedIds((prev) => [...prev, apartment._id]);
       } else {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({}));
         toast.error(errorData.message || "Failed to submit request");
       }
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast.error("Something went wrong");
     }
   };
 
-  if (isLoading)
-    return <p className="text-center mt-12">Loading apartments...</p>;
+  if (isLoading) return <p className="text-center mt-12">Loading apartments...</p>;
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h2 className="text-3xl font-bold mb-8 text-center">
-        Available Apartments
-      </h2>
+      <h2 className="text-3xl font-bold mb-8 text-center">Available Apartments</h2>
 
       {/* Rent Filter */}
-      <form
-        onSubmit={handleSearch}
-        className="flex flex-wrap gap-4 mb-8 justify-center"
-      >
+      <form onSubmit={handleSearch} className="flex flex-wrap gap-4 mb-8 justify-center">
         <input
           type="number"
           placeholder="Min Rent"
@@ -90,32 +86,17 @@ const Apartments = () => {
           value={tempMaxRent}
           onChange={(e) => setTempMaxRent(e.target.value)}
         />
-        <button type="submit" className="btn btn-primary">
-          Search
-        </button>
+        <button type="submit" className="btn btn-primary">Search</button>
       </form>
 
       {/* Apartment Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {data?.apartments?.map((apt) => (
-          <div
-            key={apt._id}
-            className="border rounded-lg shadow p-4 bg-base-100"
-          >
-            <img
-              src={apt.image}
-              alt="Apartment"
-              className="w-full h-48 object-cover rounded-md mb-4"
-            />
-            <p>
-              <span className="font-semibold">Floor:</span> {apt.floor}
-            </p>
-            <p>
-              <span className="font-semibold">Block:</span> {apt.block}
-            </p>
-            <p>
-              <span className="font-semibold">Apartment No:</span> {apt.number}
-            </p>
+          <div key={apt._id} className="border rounded-lg shadow p-4 bg-base-100">
+            <img src={apt.image} alt="Apartment" className="w-full h-48 object-cover rounded-md mb-4" />
+            <p><span className="font-semibold">Floor:</span> {apt.floor}</p>
+            <p><span className="font-semibold">Block:</span> {apt.block}</p>
+            <p><span className="font-semibold">Apartment No:</span> {apt.number}</p>
             <p className="font-bold mt-2 flex items-center gap-2 text-green-700">
               <FaMoneyBillWave /> {apt.rent.toLocaleString()} ৳
             </p>
@@ -127,9 +108,7 @@ const Apartments = () => {
               }`}
             >
               <FaRegHandshake />
-              {submittedIds.includes(apt._id)
-                ? "Request Sent"
-                : "Apply for Agreement"}
+              {submittedIds.includes(apt._id) ? "Request Sent" : "Apply for Agreement"}
             </button>
           </div>
         ))}
@@ -141,9 +120,7 @@ const Apartments = () => {
           {Array.from({ length: Math.ceil(data.total / 6) }, (_, i) => (
             <button
               key={i}
-              className={`btn btn-sm ${
-                page === i + 1 ? "btn-active btn-primary" : "btn-outline"
-              }`}
+              className={`btn btn-sm ${page === i + 1 ? "btn-active btn-primary" : "btn-outline"}`}
               onClick={() => setPage(i + 1)}
             >
               {i + 1}

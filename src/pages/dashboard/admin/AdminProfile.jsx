@@ -3,21 +3,24 @@ import { useQuery } from "@tanstack/react-query";
 import { AuthContext } from "../../../providers/AuthProvider";
 import { FaBuilding, FaUsers } from "react-icons/fa";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const AdminProfile = () => {
   const { user } = useContext(AuthContext);
 
   const { data: stats = {}, isLoading } = useQuery({
     queryKey: ["adminSummary"],
+    enabled: !!user, // don't run until user exists
     queryFn: async () => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
-      const res = await fetch(
-        "https://building-management-server-woad-two.vercel.app/api/admin/summary",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_URL}/api/admin/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to load summary: ${res.status}`);
       return res.json();
     },
+    staleTime: 60_000,
   });
 
   if (isLoading)
@@ -49,14 +52,21 @@ const AdminProfile = () => {
             <span>Apartment Overview</span>
           </div>
           <p>
-            Total Rooms: <span className="font-bold">{stats.totalRooms}</span>
+            {" "}
+            Total Rooms: <span className="font-bold">
+              {stats.totalRooms}
+            </span>{" "}
           </p>
           <p>
+            {" "}
             Available:{" "}
-            <span className="font-bold">{stats.availablePercentage}%</span>
+            <span className="font-bold">{stats.availablePercentage}%</span>{" "}
           </p>
           <p>
-            Rented: <span className="font-bold">{stats.rentedPercentage}%</span>
+            {" "}
+            Rented: <span className="font-bold">
+              {stats.rentedPercentage}%
+            </span>{" "}
           </p>
         </div>
 
@@ -66,11 +76,15 @@ const AdminProfile = () => {
             <span>Users Summary</span>
           </div>
           <p>
-            Total Users: <span className="font-bold">{stats.totalUsers}</span>
+            {" "}
+            Total Users: <span className="font-bold">
+              {stats.totalUsers}
+            </span>{" "}
           </p>
           <p>
+            {" "}
             Total Members:{" "}
-            <span className="font-bold">{stats.totalMembers}</span>
+            <span className="font-bold">{stats.totalMembers}</span>{" "}
           </p>
         </div>
       </div>

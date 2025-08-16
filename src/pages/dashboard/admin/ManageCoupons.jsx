@@ -3,6 +3,8 @@ import { useContext, useState } from "react";
 import { AuthContext } from "../../../providers/AuthProvider";
 import { FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const ManageCoupons = () => {
   const { user } = useContext(AuthContext);
   const queryClient = useQueryClient();
@@ -14,43 +16,67 @@ const ManageCoupons = () => {
 
   const { data: coupons = [], isLoading } = useQuery({
     queryKey: ["coupons"],
+    enabled: !!user,
     queryFn: async () => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
-      const res = await fetch("https://building-management-server-woad-two.vercel.app/api/admin/coupons", {
+
+      const res = await fetch(`${API_URL}/api/admin/coupons`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) throw new Error(`Failed to load coupons: ${res.status}`);
       return res.json();
     },
+    staleTime: 30_000,
   });
 
   const addCoupon = useMutation({
     mutationFn: async () => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
-      await fetch("https://building-management-server-woad-two.vercel.app/api/admin/coupons", {
+
+      const payload = {
+        code: form.code.trim(),
+        discountPercentage: Number(form.discountPercentage),
+        description: form.description.trim(),
+      };
+
+      const res = await fetch(`${API_URL}/api/admin/coupons`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Failed to add coupon: ${res.status} ${text}`);
+      }
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["coupons"]);
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
       setForm({ code: "", discountPercentage: "", description: "" });
     },
   });
 
   const toggleCoupon = useMutation({
     mutationFn: async (code) => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
-      await fetch(`https://building-management-server-woad-two.vercel.app/api/admin/coupons/${code}/toggle`, {
+      const res = await fetch(`${API_URL}/api/admin/coupons/${code}/toggle`, {
         method: "PATCH",
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Failed to toggle coupon: ${res.status} ${text}`);
+      }
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries(["coupons"]);
+      queryClient.invalidateQueries({ queryKey: ["coupons"] });
     },
   });
 
@@ -84,6 +110,8 @@ const ManageCoupons = () => {
             setForm({ ...form, discountPercentage: e.target.value })
           }
           required
+          min={0}
+          max={100}
         />
         <input
           type="text"
@@ -128,14 +156,15 @@ const ManageCoupons = () => {
                   <button
                     className="btn btn-outline btn-sm"
                     onClick={() => toggleCoupon.mutate(c.code)}
+                    disabled={toggleCoupon.isPending}
                   >
                     {c.isActive ? (
                       <>
-                        <FaToggleOff className="text-red-500 mr-1" /> Disable
+                        <FaToggleOff className="mr-1" /> Disable
                       </>
                     ) : (
                       <>
-                        <FaToggleOn className="text-green-600 mr-1" /> Enable
+                        <FaToggleOn className="mr-1" /> Enable
                       </>
                     )}
                   </button>

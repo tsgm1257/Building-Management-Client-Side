@@ -3,18 +3,25 @@ import { useQuery } from "@tanstack/react-query";
 import { AuthContext } from "../../providers/AuthProvider";
 import { MdCampaign, MdDateRange } from "react-icons/md";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Announcements = () => {
   const { user } = useContext(AuthContext);
 
   const { data: announcements = [], isLoading } = useQuery({
     queryKey: ["announcements"],
+    enabled: !!user, // don't run until user is available
     queryFn: async () => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
-      const res = await fetch("https://building-management-server-woad-two.vercel.app/api/admin/announcements", {
+      const res = await fetch(`${API_URL}/api/admin/announcements`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok)
+        throw new Error(`Failed to load announcements: ${res.status}`);
       return res.json();
     },
+    staleTime: 60_000,
   });
 
   if (isLoading) {

@@ -4,53 +4,51 @@ import { AuthContext } from "../../../providers/AuthProvider";
 import { FaUserSlash, FaUsersCog } from "react-icons/fa";
 import toast from "react-hot-toast";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const ManageMembers = () => {
   const { user } = useContext(AuthContext);
   const queryClient = useQueryClient();
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ["members"],
+    enabled: !!user,
     queryFn: async () => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
-      const res = await fetch(
-        "https://building-management-server-woad-two.vercel.app/api/admin/members",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch members");
-      }
-
+      const res = await fetch(`${API_URL}/api/admin/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`Failed to fetch members: ${res.status}`);
       return res.json();
     },
+    staleTime: 30_000,
   });
 
   const mutation = useMutation({
     mutationFn: async (email) => {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
       const token = await user.getIdToken();
       const response = await fetch(
-        `https://building-management-server-woad-two.vercel.app/api/admin/members/${email}/demote`,
+        `${API_URL}/api/admin/members/${encodeURIComponent(email)}/demote`,
         {
           method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to remove member");
+        const errorData = await response.text().catch(() => "");
+        throw new Error(
+          errorData || `Failed to remove member: ${response.status}`
+        );
       }
 
       return response.json();
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries(["members"]);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["members"] });
       toast.success("Member removed successfully and agreement deleted");
-      console.log("Member removal result:", data);
     },
     onError: (error) => {
       toast.error("Failed to remove member: " + error.message);

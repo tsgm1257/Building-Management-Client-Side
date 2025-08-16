@@ -3,6 +3,8 @@ import { AuthContext } from "../providers/AuthProvider";
 import { useNavigate, Link } from "react-router";
 import toast from "react-hot-toast";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Register = () => {
   const { register, updateUserProfile } = useContext(AuthContext);
   const [error, setError] = useState("");
@@ -20,6 +22,7 @@ const Register = () => {
     const password = form.password.value;
     const photoURL = form.photoURL.value;
 
+    // Password validation
     const passwordValid = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/.test(password);
     if (!passwordValid) {
       toast.error(
@@ -30,37 +33,31 @@ const Register = () => {
     }
 
     try {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+
       // Step 1: Create user in Firebase
-      console.log("Creating user in Firebase...");
       const result = await register(email, password);
 
       // Step 2: Update Firebase profile
-      console.log("Updating Firebase profile...");
       await updateUserProfile({ displayName: name, photoURL });
 
       // Step 3: Get token and save to database
-      console.log("Getting token...");
       const token = await result.user.getIdToken();
 
-      console.log("Saving user to database...");
-      const response = await fetch(
-        "https://building-management-server-woad-two.vercel.app/api/users",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            name,
-            email,
-            photoURL,
-            role: "user",
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/users`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          photoURL,
+          role: "user",
+        }),
+      });
 
-      // Check if the database save was successful
       if (!response.ok) {
         const errorData = await response.text();
         throw new Error(

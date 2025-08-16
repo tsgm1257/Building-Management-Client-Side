@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../providers/AuthProvider";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const UserProfile = () => {
   const { user } = useContext(AuthContext);
   const [agreement, setAgreement] = useState(null);
@@ -10,43 +12,39 @@ const UserProfile = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      if (!user) return;
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
+        if (!API_URL) throw new Error("VITE_API_URL is not defined");
         const token = await user.getIdToken();
 
         // Fetch user role
-        const roleRes = await fetch(
-          `https://building-management-server-woad-two.vercel.app/api/users/role`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-
+        const roleRes = await fetch(`${API_URL}/api/users/role`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
         if (roleRes.ok) {
           const roleData = await roleRes.json();
           setUserRole(roleData.role);
         }
 
         // Fetch agreement data
-        const agreementRes = await fetch(
-          `https://building-management-server-woad-two.vercel.app/api/agreements/user`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const agreementRes = await fetch(`${API_URL}/api/agreements/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         if (agreementRes.ok) {
           const agreementData = await agreementRes.json();
           setAgreement(agreementData);
         } else if (agreementRes.status === 404) {
-          // No agreement found - this is normal for users without agreements
-          setAgreement(null);
+          setAgreement(null); // normal when no agreement
         } else {
           throw new Error(`HTTP error! status: ${agreementRes.status}`);
         }
-      } catch (error) {
-        console.error("Data fetch error:", error);
+      } catch (err) {
+        console.error("Data fetch error:", err);
         setError("Failed to load profile information");
       } finally {
         setLoading(false);
@@ -74,7 +72,7 @@ const UserProfile = () => {
           alt="Profile"
           className="w-28 h-28 rounded-full object-cover border border-primary"
           onError={(e) => {
-            e.target.src = "https://i.ibb.co/Q3YR2xSn/default-user.png";
+            e.currentTarget.src = "https://i.ibb.co/Q3YR2xSn/default-user.png";
           }}
         />
         <div>

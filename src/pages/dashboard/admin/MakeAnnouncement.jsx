@@ -3,6 +3,8 @@ import { AuthContext } from "../../../providers/AuthProvider";
 import { FaBullhorn } from "react-icons/fa";
 import { MdOutlineAnnouncement } from "react-icons/md";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const MakeAnnouncement = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -11,22 +13,31 @@ const MakeAnnouncement = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = await user.getIdToken();
+    setMessage("");
 
-    const res = await fetch("https://building-management-server-woad-two.vercel.app/api/admin/announcements", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ title, description }),
-    });
+    try {
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+      const token = await user.getIdToken();
 
-    if (res.ok) {
+      const res = await fetch(`${API_URL}/api/admin/announcements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ title, description }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(`Failed to post announcement: ${res.status} ${text}`);
+      }
+
       setMessage("Announcement posted successfully.");
       setTitle("");
       setDescription("");
-    } else {
+    } catch (err) {
+      console.error(err);
       setMessage("Failed to post announcement.");
     }
   };
