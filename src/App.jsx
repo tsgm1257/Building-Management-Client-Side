@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import MainLayout from "./layout/MainLayout";
 import DashboardLayout from "./layout/DashboardLayout";
 import PrivateRoute from "./routes/PrivateRoute";
+import ApartmentDetails from "./pages/ApartmentDetails";
 
 import Home from "./pages/Home";
 import Apartments from "./pages/Apartments";
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
     children: [
       { path: "/", element: <Home /> },
       { path: "/apartments", element: <Apartments /> },
+      {
+        path: "/apartments/:id",
+        element: <ApartmentDetails />,
+      },
       { path: "/login", element: <Login /> },
       { path: "/register", element: <Register /> },
       { path: "*", element: <NotFound /> },
