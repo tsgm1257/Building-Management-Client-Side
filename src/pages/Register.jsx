@@ -1,135 +1,90 @@
 import { useContext, useState } from "react";
+import { Link, useNavigate } from "react-router";
+import Section from "../components/Section";
+import Container from "../components/Container";
 import { AuthContext } from "../providers/AuthProvider";
-import { useNavigate, Link } from "react-router";
-import toast from "react-hot-toast";
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 const Register = () => {
-  const { register, updateUserProfile } = useContext(AuthContext);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { registerUser } = useContext(AuthContext);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    const form = e.target;
-    const name = form.name.value;
-    const email = form.email.value;
-    const password = form.password.value;
-    const photoURL = form.photoURL.value;
-
-    // Password validation
-    const passwordValid = /^(?=.*[a-z])(?=.*[A-Z]).{6,}$/.test(password);
-    if (!passwordValid) {
-      toast.error(
-        "Password must include uppercase, lowercase, and be at least 6 characters"
-      );
-      setIsLoading(false);
-      return;
-    }
-
+    setBusy(true);
     try {
-      if (!API_URL) throw new Error("VITE_API_URL is not defined");
-
-      // Step 1: Create user in Firebase
-      const result = await register(email, password);
-
-      // Step 2: Update Firebase profile
-      await updateUserProfile({ displayName: name, photoURL });
-
-      // Step 3: Get token and save to database
-      const token = await result.user.getIdToken();
-
-      const response = await fetch(`${API_URL}/api/users`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name,
-          email,
-          photoURL,
-          role: "user",
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(
-          `Database save failed: ${response.status} - ${errorData}`
-        );
-      }
-
-      const dbResult = await response.json();
-      console.log("Database save result:", dbResult);
-
-      form.reset();
-      toast.success("Registration successful!");
-      navigate("/");
-    } catch (err) {
-      console.error("Registration error:", err);
-      setError("Registration failed: " + err.message);
-      toast.error("Registration failed: " + err.message);
+      await registerUser(email, password, name);
+      navigate("/dashboard", { replace: true });
+    } catch {
+      // handle error UI
     } finally {
-      setIsLoading(false);
+      setBusy(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4 text-center">Register</h2>
-      <form onSubmit={handleRegister}>
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          className="input w-full mb-4"
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="input w-full mb-4"
-          required
-          disabled={isLoading}
-        />
-        <input
-          type="text"
-          name="photoURL"
-          placeholder="Photo URL"
-          className="input w-full mb-4"
-          disabled={isLoading}
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="input w-full mb-4"
-          required
-          disabled={isLoading}
-        />
-        <button
-          className="btn w-full bg-green-600 text-white"
-          disabled={isLoading}
-        >
-          {isLoading ? "Registering..." : "Register"}
-        </button>
-      </form>
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      <p className="text-sm mt-4 text-center">
-        Already have an account?{" "}
-        <Link to="/login" className="text-blue-600">
-          Login
-        </Link>
-      </p>
-    </div>
+    <Section>
+      <Container>
+        <div className="max-w-md mx-auto bg-base-100 rounded-xl border border-base-300 p-6 shadow">
+          <h1 className="text-2xl font-bold text-center mb-4">
+            Create account
+          </h1>
+          <form onSubmit={onSubmit} className="grid gap-4">
+            <div>
+              <label className="label">Full Name</label>
+              <input
+                className="input input-bordered w-full"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoComplete="name"
+              />
+            </div>
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                className="input input-bordered w-full"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div>
+              <label className="label">Password</label>
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+            </div>
+            <button
+              type="submit"
+              className={`btn btn-primary w-full ${
+                busy ? "btn-disabled" : "hover:opacity-90"
+              }`}
+              disabled={busy}
+            >
+              {busy ? "Creating…" : "Create account"}
+            </button>
+          </form>
+
+          <p className="text-center text-sm mt-4">
+            Already have an account?{" "}
+            <Link to="/login" className="link link-hover">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </Container>
+    </Section>
   );
 };
 

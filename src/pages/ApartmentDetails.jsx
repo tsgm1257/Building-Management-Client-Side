@@ -15,34 +15,22 @@ const ApartmentDetails = () => {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    // If we already have the apt via state, skip fetching
     if (aptFromState) return;
 
-    const run = async () => {
+    (async () => {
       try {
-        // Try an id endpoint first (if your backend adds one in the future)
-        let res = await fetch(`${API_URL}/api/apartments/${id}`);
-        if (res.ok) {
-          const data = await res.json();
-          setApt(data);
-          setLoading(false);
-          return;
-        }
-        // Fallback: fetch all and find locally
-        res = await fetch(`${API_URL}/api/apartments`);
+        const res = await fetch(`${API_URL}/api/apartments/${id}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const list = data?.apartments || data || [];
-        const found = list.find((x) => String(x._id) === String(id));
-        if (!found) throw new Error("Not found");
-        setApt(found);
-        setLoading(false);
+        setApt(data);
       } catch (e) {
+        console.error(e);
         setError("Failed to load apartment details.");
+      } finally {
         setLoading(false);
       }
-    };
-    run();
-  }, [API_URL, id, aptFromState]);
+    })();
+  }, [id, aptFromState]);
 
   const title = useMemo(() => {
     if (!apt) return "Apartment Details";
@@ -51,6 +39,7 @@ const ApartmentDetails = () => {
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (error) return <div className="text-center py-12">{error}</div>;
+  if (!apt) return <div className="text-center py-12">Not found.</div>;
 
   return (
     <Section>
@@ -66,15 +55,34 @@ const ApartmentDetails = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold mb-4">{title}</h1>
             <div className="space-y-2">
-              <p><span className="font-medium">Floor:</span> {apt.floor}</p>
-              <p><span className="font-medium">Monthly Rent:</span> {apt.rent?.toLocaleString()} ৳</p>
-              <p><span className="font-medium">Block:</span> {apt.block}</p>
-              <p><span className="font-medium">Apartment No:</span> {apt.number}</p>
+              <p>
+                <span className="font-medium">Floor:</span> {apt.floor}
+              </p>
+              <p>
+                <span className="font-medium">Monthly Rent:</span>{" "}
+                {apt.rent?.toLocaleString()} ৳
+              </p>
+              <p>
+                <span className="font-medium">Block:</span> {apt.block}
+              </p>
+              <p>
+                <span className="font-medium">Apartment No:</span> {apt.number}
+              </p>
             </div>
 
             <div className="mt-6 flex gap-3">
-              <Link to="/apartments" className="btn btn-outline hover:opacity-90">Back to All</Link>
-              <a href="/dashboard/member/make-payment" className="btn btn-primary hover:opacity-90">Proceed to Payment</a>
+              <Link
+                to="/apartments"
+                className="btn btn-outline hover:opacity-90"
+              >
+                Back to All
+              </Link>
+              <a
+                href="/dashboard/make-payment"
+                className="btn btn-primary hover:opacity-90"
+              >
+                Proceed to Payment
+              </a>
             </div>
           </div>
         </div>

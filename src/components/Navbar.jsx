@@ -1,11 +1,11 @@
 import { useContext } from "react";
 import { NavLink, Link } from "react-router";
 import { AuthContext } from "../providers/AuthProvider";
+import ThemeToggle from "./ThemeToggle";
 import { FiMenu } from "react-icons/fi";
 
 const linkBase =
   "px-3 py-2 text-sm md:text-base transition-colors duration-200";
-const linkHover = "hover:opacity-90";
 const linkActive =
   "relative after:absolute after:left-0 after:-bottom-1 after:h-[2px] after:w-full after:bg-secondary";
 
@@ -13,9 +13,7 @@ const NavA = ({ to, label, end = false }) => (
   <NavLink
     to={to}
     end={end}
-    className={({ isActive }) =>
-      `${linkBase} ${linkHover} ${isActive ? linkActive : ""}`
-    }
+    className={({ isActive }) => `${linkBase} ${isActive ? linkActive : ""}`}
   >
     {label}
   </NavLink>
@@ -27,6 +25,37 @@ const Navbar = () => {
   const handleLogout = async () => {
     await logout();
   };
+
+  // Public routes (shown when logged OUT): exactly 3
+  const publicLinks = [
+    { to: "/", label: "Home", end: true },
+    { to: "/apartments", label: "Apartments" },
+    { to: "/contact", label: "Contact" },
+  ];
+
+  // Logged-in routes (top-level): exactly 5
+  // (Dashboard dropdown includes all protected routes)
+  const loggedInTopLinks = [
+    { to: "/", label: "Home", end: true },
+    { to: "/apartments", label: "Apartments" },
+    { to: "/contact", label: "Contact" },
+    { to: "/dashboard", label: "Dashboard" },
+    { to: "/dashboard/announcements", label: "Announcements" },
+  ];
+
+  // Protected routes to expose in dropdown (works for both member/admin)
+  const dashboardProtected = [
+    { to: "/dashboard", label: "Overview" },
+    { to: "/dashboard/user/profile", label: "My Profile" },
+    { to: "/dashboard/member/make-payment", label: "Make Payment" },
+    { to: "/dashboard/member/payment-history", label: "Payment History" },
+    { to: "/dashboard/announcements", label: "Announcements" },
+    // Admin-only routes will be protected by PrivateRoute anyway
+    { to: "/dashboard/admin/manage-members", label: "Manage Members" },
+    { to: "/dashboard/admin/manage-coupons", label: "Manage Coupons" },
+    { to: "/dashboard/admin/requests", label: "Agreement Requests" },
+    { to: "/dashboard/admin/profile", label: "Admin Profile" },
+  ];
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 bg-primary text-primary-content/95 shadow-sm">
@@ -41,261 +70,164 @@ const Navbar = () => {
               <img
                 src="https://i.ibb.co/4wK6q5DH/logo.png"
                 alt="Logo"
-                className="w-9 h-9 md:w-10 md:h-10"
+                className="w-10 h-10 rounded"
               />
               <span>My Building</span>
             </Link>
           </div>
 
-          {/* Center: Desktop Navigation */}
-          <div className="hidden md:flex flex-1 justify-center gap-4 font-medium">
-            <NavA to="/" label="Home" end />
-            <NavA to="/apartments" label="Apartment" />
-            {!user && (
-              // anchor to your About section so it’s not a dead route
-              <a href="/#about" className={`${linkBase} ${linkHover}`}>
-                About
-              </a>
-            )}
-          </div>
-
-          {/* Right: Desktop User/Profile */}
-          <div className="hidden md:flex flex-none items-center gap-3">
-            {!user ? (
-              <Link
-                to="/login"
-                className="btn btn-outline btn-sm hover:opacity-90"
-              >
-                <img
-                  src="https://i.ibb.co/Q3YR2xSn/default-user.png"
-                  alt="Login"
-                  className="w-7 h-7 rounded-full"
-                />
-                <span className="hidden lg:inline">Login</span>
-              </Link>
-            ) : (
-              <div className="dropdown dropdown-end">
-                <label
-                  tabIndex={0}
-                  className="btn btn-outline btn-sm btn-circle avatar hover:opacity-90"
-                >
-                  <div className="w-9 h-9 rounded-full">
-                    <img
-                      src={
-                        user.photoURL ||
-                        "https://i.ibb.co/Q3YR2xSn/default-user.png"
-                      }
-                      alt="Profile"
-                      className="object-cover"
-                    />
-                  </div>
-                </label>
-                <ul
-                  tabIndex={0}
-                  className="mt-3 z-[60] p-2 shadow menu menu-sm dropdown-content bg-base-100 text-base-content rounded w-60"
-                >
-                  <li className="pointer-events-none">
-                    <span className="font-semibold truncate">
-                      {user.displayName}
-                    </span>
-                  </li>
-
-                  {/* 5 protected links */}
-                  <li>
-                    <NavLink
-                      to="/dashboard"
-                      className={({ isActive }) =>
-                        `${linkBase} ${isActive ? linkActive : ""}`
-                      }
-                    >
-                      Overview
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/dashboard/user/profile"
-                      className={({ isActive }) =>
-                        `${linkBase} ${isActive ? linkActive : ""}`
-                      }
-                    >
-                      Profile
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/dashboard/member/make-payment"
-                      className={({ isActive }) =>
-                        `${linkBase} ${isActive ? linkActive : ""}`
-                      }
-                    >
-                      Make Payment
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/dashboard/member/payment-history"
-                      className={({ isActive }) =>
-                        `${linkBase} ${isActive ? linkActive : ""}`
-                      }
-                    >
-                      Payment History
-                    </NavLink>
-                  </li>
-                  <li>
-                    <NavLink
-                      to="/dashboard/announcements"
-                      className={({ isActive }) =>
-                        `${linkBase} ${isActive ? linkActive : ""}`
-                      }
-                    >
-                      Announcements
-                    </NavLink>
-                  </li>
-
-                  <li className="pt-1">
-                    <button
-                      onClick={handleLogout}
-                      className="btn btn-primary btn-sm w-full hover:opacity-90"
-                    >
-                      Logout
-                    </button>
-                  </li>
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Right: Mobile Hamburger */}
-          <div className="md:hidden ml-auto">
-            <div className="dropdown dropdown-end">
-              <label
-                tabIndex={0}
-                className="btn btn-outline btn-circle hover:opacity-90"
-              >
-                <FiMenu className="text-2xl" />
-              </label>
-              <ul
-                tabIndex={0}
-                className="dropdown-content mt-3 z-[60] p-3 shadow menu menu-sm bg-base-100 text-base-content rounded w-72 space-y-1"
-              >
-                <li>
-                  <NavLink
-                    to="/"
-                    end
-                    className={({ isActive }) =>
-                      `${linkBase} ${isActive ? linkActive : ""}`
-                    }
-                  >
-                    Home
-                  </NavLink>
-                </li>
-                <li>
-                  <NavLink
-                    to="/apartments"
-                    className={({ isActive }) =>
-                      `${linkBase} ${isActive ? linkActive : ""}`
-                    }
-                  >
-                    Apartment
-                  </NavLink>
-                </li>
-                {!user && (
-                  <li>
-                    <a href="/#about" className={`${linkBase} ${linkHover}`}>
-                      About
-                    </a>
-                  </li>
-                )}
-
-                <li className="flex items-center gap-3 px-2 py-2">
-                  <img
-                    src={
-                      user?.photoURL ||
-                      "https://i.ibb.co/Q3YR2xSn/default-user.png"
-                    }
-                    alt="User"
-                    className="w-10 h-10 rounded-full object-cover"
-                  />
-                  <span className="font-medium">
-                    {user ? user.displayName : "Guest"}
-                  </span>
-                </li>
-
-                {!user ? (
-                  <li className="pt-1">
-                    <Link
-                      to="/login"
-                      className="btn btn-primary w-full hover:opacity-90"
-                    >
-                      Login
-                    </Link>
-                  </li>
-                ) : (
-                  <>
-                    <li>
-                      <NavLink
-                        to="/dashboard"
-                        className={({ isActive }) =>
-                          `${linkBase} ${isActive ? linkActive : ""}`
-                        }
-                      >
-                        Overview
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/dashboard/user/profile"
-                        className={({ isActive }) =>
-                          `${linkBase} ${isActive ? linkActive : ""}`
-                        }
-                      >
-                        Profile
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/dashboard/member/make-payment"
-                        className={({ isActive }) =>
-                          `${linkBase} ${isActive ? linkActive : ""}`
-                        }
-                      >
-                        Make Payment
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/dashboard/member/payment-history"
-                        className={({ isActive }) =>
-                          `${linkBase} ${isActive ? linkActive : ""}`
-                        }
-                      >
-                        Payment History
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink
-                        to="/dashboard/announcements"
-                        className={({ isActive }) =>
-                          `${linkBase} ${isActive ? linkActive : ""}`
-                        }
-                      >
-                        Announcements
-                      </NavLink>
-                    </li>
-                    <li className="pt-1">
-                      <button
-                        onClick={handleLogout}
-                        className="btn btn-primary w-full hover:opacity-90"
-                      >
-                        Logout
-                      </button>
-                    </li>
-                  </>
-                )}
-              </ul>
+          {/* Center: Links */}
+          <div className="flex-1 hidden lg:flex">
+            <div className="mx-auto flex items-center gap-2">
+              {(user ? loggedInTopLinks : publicLinks).map((l) => (
+                <NavA key={l.to} to={l.to} label={l.label} end={l.end} />
+              ))}
             </div>
           </div>
-          {/* /mobile */}
+
+          {/* Right: Theme + Auth */}
+          <div className="flex-none flex items-center gap-2">
+            <ThemeToggle />
+
+            {!user ? (
+              <div className="flex items-center gap-2">
+                <Link to="/login" className="btn btn-sm btn-outline">
+                  Login
+                </Link>
+                <Link to="/register" className="btn btn-sm btn-primary">
+                  Register
+                </Link>
+              </div>
+            ) : (
+              <>
+                {/* Dashboard dropdown with ALL protected links */}
+                <div className="dropdown dropdown-end hidden lg:block">
+                  <label
+                    tabIndex={0}
+                    className="btn btn-sm btn-outline flex items-center gap-2"
+                  >
+                    <span>Dashboard</span>
+                  </label>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu p-2 shadow bg-base-100 text-base-content rounded-box w-64"
+                  >
+                    {dashboardProtected.map((d) => (
+                      <li key={d.to}>
+                        <NavLink
+                          to={d.to}
+                          className={({ isActive }) =>
+                            `${linkBase} ${isActive ? linkActive : ""}`
+                          }
+                        >
+                          {d.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Avatar menu */}
+                <div className="dropdown dropdown-end">
+                  <label
+                    tabIndex={0}
+                    className="btn btn-outline btn-sm btn-circle avatar hover:opacity-90"
+                  >
+                    <div className="w-9 h-9 rounded-full overflow-hidden">
+                      <img
+                        src={
+                          user.photoURL ||
+                          "https://i.ibb.co/Q3YR2xSn/default-user.png"
+                        }
+                        alt="User"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </label>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content menu p-2 shadow bg-base-100 text-base-content rounded-box w-56"
+                  >
+                    <li>
+                      <NavLink to="/dashboard/user/profile">My Profile</NavLink>
+                    </li>
+                    <li>
+                      <button onClick={handleLogout}>Logout</button>
+                    </li>
+                  </ul>
+                </div>
+              </>
+            )}
+
+            {/* Mobile menu */}
+            <div className="lg:hidden dropdown dropdown-end">
+              <label tabIndex={0} className="btn btn-ghost btn-circle">
+                <FiMenu size={20} />
+              </label>
+              <div
+                tabIndex={0}
+                className="dropdown-content mt-2 p-2 shadow bg-base-100 text-base-content rounded-box w-64"
+              >
+                <ul className="menu">
+                  {(user ? loggedInTopLinks : publicLinks).map((l) => (
+                    <li key={l.to}>
+                      <NavLink
+                        className={({ isActive }) =>
+                          `${linkBase} ${isActive ? linkActive : ""}`
+                        }
+                        to={l.to}
+                        end={l.end}
+                      >
+                        {l.label}
+                      </NavLink>
+                    </li>
+                  ))}
+                  {user && (
+                    <>
+                      <li className="menu-title mt-2">Dashboard</li>
+                      {dashboardProtected.map((d) => (
+                        <li key={d.to}>
+                          <NavLink
+                            className={({ isActive }) =>
+                              `${linkBase} ${isActive ? linkActive : ""}`
+                            }
+                            to={d.to}
+                          >
+                            {d.label}
+                          </NavLink>
+                        </li>
+                      ))}
+                      <li className="mt-2">
+                        <button
+                          className="btn btn-outline w-full"
+                          onClick={handleLogout}
+                        >
+                          Logout
+                        </button>
+                      </li>
+                    </>
+                  )}
+                  {!user && (
+                    <li className="mt-2 flex gap-2">
+                      <Link
+                        to="/login"
+                        className="btn btn-outline btn-sm flex-1"
+                      >
+                        Login
+                      </Link>
+                      <Link
+                        to="/register"
+                        className="btn btn-primary btn-sm flex-1"
+                      >
+                        Register
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+            {/* /Mobile */}
+          </div>
         </div>
       </div>
     </div>

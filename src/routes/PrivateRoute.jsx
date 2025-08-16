@@ -7,25 +7,33 @@ const API_URL = import.meta.env.VITE_API_URL;
 const PrivateRoute = ({ children, requiredRole }) => {
   const { user, loading } = useContext(AuthContext);
   const [userRole, setUserRole] = useState(null);
-  const [checkingRole, setCheckingRole] = useState(!!requiredRole);
+  const [checkingRole, setCheckingRole] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
+    // If no role is required, no need to check
+    if (!requiredRole) {
+      setCheckingRole(false);
+      return;
+    }
+
+    // If user isn't ready or not logged in yet, don't start role check
+    if (!user) {
+      setCheckingRole(false);
+      return;
+    }
+
+    // We have a user and a required role → check role
     const fetchRole = async () => {
-      if (!user || !requiredRole) return;
       try {
+        setCheckingRole(true);
         if (!API_URL) throw new Error("VITE_API_URL is not defined");
+
         const token = await user.getIdToken();
-        const res = await fetch(`${API_URL}/api/users/role`, {
+        const res = await fetch(`${API_URL}/api/user/role`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const ct = res.headers.get("content-type") || "";
-        if (!ct.includes("application/json")) {
-          const text = await res.text().catch(() => "");
-          throw new Error("Expected JSON, got: " + text);
-        }
 
         const data = await res.json();
         setUserRole(data.role);
@@ -40,23 +48,26 @@ const PrivateRoute = ({ children, requiredRole }) => {
     fetchRole();
   }, [user, requiredRole]);
 
+  // Wait for Firebase auth to resolve, and (if needed) role check
   if (loading || checkingRole) {
     return <div className="text-center mt-10">Loading...</div>;
   }
 
+  // If not logged in, bounce to login and remember where we came from
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Redirect if logged in but role doesn't match the requirement
-  if (
-    requiredRole &&
-    !(
+  // If role is required, verify it (string or array supported)
+  if (requiredRole) {
+    const ok =
       (Array.isArray(requiredRole) && requiredRole.includes(userRole)) ||
-      (!Array.isArray(requiredRole) && userRole === requiredRole)
-    )
-  ) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+      (!Array.isArray(requiredRole) && userRole === requiredRole);
+
+    if (!ok) {
+      // Not authorized for this route
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return children;

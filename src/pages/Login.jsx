@@ -1,108 +1,79 @@
 import { useContext, useState } from "react";
+import { useLocation, useNavigate, Link } from "react-router";
+import Section from "../components/Section";
+import Container from "../components/Container";
 import { AuthContext } from "../providers/AuthProvider";
-import { useNavigate, Link } from "react-router";
-import { GoogleAuthProvider, signInWithPopup, getAuth } from "firebase/auth";
-import toast from "react-hot-toast";
-import { app } from "../firebase/firebase.config";
-
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-const API_URL = import.meta.env.VITE_API_URL;
 
 const Login = () => {
-  const { login } = useContext(AuthContext);
-  const [error, setError] = useState("");
+  const { signIn } = useContext(AuthContext);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from?.pathname || "/";
 
-  const handleLogin = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    const form = e.target;
-    const email = form.email.value;
-    const password = form.password.value;
-
+    setBusy(true);
     try {
-      await login(email, password);
-      toast.success("Login successful!");
-      form.reset();
-      navigate("/");
-    } catch (err) {
-      setError("Login failed: " + err.message);
-      toast.error("Login failed");
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      if (!API_URL) throw new Error("VITE_API_URL is not defined");
-
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      // Save to database
-      const token = await user.getIdToken();
-      const res = await fetch(`${API_URL}/api/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: user.displayName,
-          email: user.email,
-          photoURL: user.photoURL,
-          role: "user",
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`Failed to save user: ${res.status} ${text}`);
-      }
-
-      toast.success("Logged in with Google!");
-      navigate("/");
-    } catch (err) {
-      console.error("Google login error:", err);
-      toast.error("Google login failed");
+      await signIn(email, password);
+      navigate(from, { replace: true });
+    } catch {
+      // handle error UI if you like
+    } finally {
+      setBusy(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded shadow">
-      <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
-      <form onSubmit={handleLogin}>
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          className="input w-full mb-4"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          className="input w-full mb-4"
-          required
-        />
-        <button className="btn w-full bg-blue-600 text-white">Login</button>
-      </form>
+    <Section>
+      <Container>
+        <div className="max-w-md mx-auto bg-base-100 rounded-xl border border-base-300 p-6 shadow">
+          <h1 className="text-2xl font-bold text-center mb-4">Welcome back</h1>
+          <form onSubmit={onSubmit} className="grid gap-4">
+            <div>
+              <label className="label">Email</label>
+              <input
+                type="email"
+                className="input input-bordered w-full"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div>
+              <label className="label">Password</label>
+              <input
+                type="password"
+                className="input input-bordered w-full"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            <button
+              type="submit"
+              className={`btn btn-primary w-full ${
+                busy ? "btn-disabled" : "hover:opacity-90"
+              }`}
+              disabled={busy}
+            >
+              {busy ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
 
-      <button
-        onClick={handleGoogleLogin}
-        className="btn w-full mt-4 bg-red-500 text-white"
-      >
-        Continue with Google
-      </button>
-
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      <p className="text-sm mt-4 text-center">
-        New here?{" "}
-        <Link to="/register" className="text-blue-600">
-          Register
-        </Link>
-      </p>
-    </div>
+          <p className="text-center text-sm mt-4">
+            New here?{" "}
+            <Link to="/register" className="link link-hover">
+              Create an account
+            </Link>
+          </p>
+        </div>
+      </Container>
+    </Section>
   );
 };
 

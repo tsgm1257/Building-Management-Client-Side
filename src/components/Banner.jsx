@@ -12,22 +12,28 @@ const Banner = () => {
   ];
 
   return (
-    <Swiper
-      autoplay={{ delay: 3000 }}
-      loop
-      modules={[Autoplay]}
-      className="h-[300px] md:h-[500px]"
-    >
-      {images.map((src, i) => (
-        <SwiperSlide key={i}>
-          <img
-            src={src}
-            alt={`Banner ${i + 1}`}
-            className="w-full h-full object-cover"
-          />
-        </SwiperSlide>
-      ))}
-    </Swiper>
+    <div className="w-full">
+      <div className="w-full aspect-[16/9] md:aspect-[21/9] bg-base-300/20">
+        <Swiper
+          modules={[Autoplay]}
+          autoplay={{ delay: 3000 }}
+          loop
+          className="w-full h-full"
+        >
+          {images.map((src, i) => (
+            <SwiperSlide key={i} className="w-full h-full">
+              <img
+                src={src}
+                alt={`Banner ${i + 1}`}
+                className="w-full h-full object-cover"
+                loading="eager"
+                decoding="async"
+              />
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+    </div>
   );
 };
 

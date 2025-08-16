@@ -1,155 +1,198 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../providers/AuthProvider";
+import Section from "../../components/Section";
+import Container from "../../components/Container";
+import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const UserProfile = () => {
   const { user } = useContext(AuthContext);
-  const [agreement, setAgreement] = useState(null);
-  const [userRole, setUserRole] = useState("user");
+  const [profile, setProfile] = useState({
+    name: "",
+    email: "",
+    photoURL: "",
+    phone: "",
+    address: "",
+  });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const load = async () => {
       if (!user) {
         setLoading(false);
         return;
       }
-
       try {
-        if (!API_URL) throw new Error("VITE_API_URL is not defined");
         const token = await user.getIdToken();
-
-        // Fetch user role
-        const roleRes = await fetch(`${API_URL}/api/users/role`, {
+        const res = await fetch(`${API_URL}/api/user/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (roleRes.ok) {
-          const roleData = await roleRes.json();
-          setUserRole(roleData.role);
-        }
-
-        // Fetch agreement data
-        const agreementRes = await fetch(`${API_URL}/api/agreements/user`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (agreementRes.ok) {
-          const agreementData = await agreementRes.json();
-          setAgreement(agreementData);
-        } else if (agreementRes.status === 404) {
-          setAgreement(null); // normal when no agreement
+        if (res.ok) {
+          const data = await res.json();
+          setProfile({
+            name: data.name || user.displayName || "",
+            email: data.email || user.email || "",
+            photoURL: data.photoURL || user.photoURL || "",
+            phone: data.phone || "",
+            address: data.address || "",
+          });
         } else {
-          throw new Error(`HTTP error! status: ${agreementRes.status}`);
+          setProfile({
+            name: user.displayName || "",
+            email: user.email || "",
+            photoURL: user.photoURL || "",
+            phone: "",
+            address: "",
+          });
         }
-      } catch (err) {
-        console.error("Data fetch error:", err);
-        setError("Failed to load profile information");
+      } catch {
+        setProfile({
+          name: user.displayName || "",
+          email: user.email || "",
+          photoURL: user.photoURL || "",
+          phone: "",
+          address: "",
+        });
       } finally {
         setLoading(false);
       }
     };
-
-    fetchUserData();
+    load();
   }, [user]);
 
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto p-6">
-        <p className="text-center">Loading profile...</p>
-      </div>
-    );
-  }
+  const handleSave = async (e) => {
+    e.preventDefault();
+    if (!user) return;
+
+    try {
+      setSaving(true);
+      const token = await user.getIdToken();
+      const res = await fetch(`${API_URL}/api/user`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: profile.name,
+          email: profile.email,
+          photoURL: profile.photoURL,
+          phone: profile.phone,
+          address: profile.address,
+        }),
+      });
+
+      if (!res.ok) throw new Error();
+      toast.success("Profile saved");
+    } catch {
+      toast.error("Failed to save");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <div className="p-6 text-center">Loading profile…</div>;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-base-100 shadow-xl rounded-xl">
-      <h2 className="text-3xl font-bold mb-6 text-center">My Profile</h2>
+    <Section>
+      <Container>
+        <div className="max-w-2xl mx-auto bg-base-100 rounded-xl shadow border border-base-300 overflow-hidden">
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-6 text-center">My Profile</h2>
 
-      <div className="flex flex-col items-center text-center space-y-4">
-        <img
-          src={user?.photoURL || "https://i.ibb.co/Q3YR2xSn/default-user.png"}
-          alt="Profile"
-          className="w-28 h-28 rounded-full object-cover border border-primary"
-          onError={(e) => {
-            e.currentTarget.src = "https://i.ibb.co/Q3YR2xSn/default-user.png";
-          }}
-        />
-        <div>
-          <h3 className="text-xl font-semibold">
-            {user?.displayName || "No Name"}
-          </h3>
-          <p className="text-sm text-gray-500">{user?.email}</p>
-        </div>
-      </div>
+            <div className="flex flex-col items-center text-center space-y-4 mb-6">
+              <img
+                src={
+                  profile.photoURL ||
+                  "https://i.ibb.co/Q3YR2xSn/default-user.png"
+                }
+                alt="Profile"
+                className="w-28 h-28 rounded-full object-cover border border-primary"
+              />
+              <div>
+                <p className="font-semibold text-lg">
+                  {profile.name || "Unnamed"}
+                </p>
+                <p className="text-sm text-base-content/60">{profile.email}</p>
+              </div>
+            </div>
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
-        </div>
-      )}
+            <form onSubmit={handleSave} className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="label">Full Name</label>
+                <input
+                  className="input input-bordered w-full"
+                  value={profile.name}
+                  onChange={(e) =>
+                    setProfile({ ...profile, name: e.target.value })
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <label className="label">Photo URL</label>
+                <input
+                  className="input input-bordered w-full"
+                  value={profile.photoURL}
+                  onChange={(e) =>
+                    setProfile({ ...profile, photoURL: e.target.value })
+                  }
+                />
+              </div>
+              <div>
+                <label className="label">Phone</label>
+                <input
+                  className="input input-bordered w-full"
+                  value={profile.phone}
+                  onChange={(e) =>
+                    setProfile({ ...profile, phone: e.target.value })
+                  }
+                  placeholder="+1 555 123 4567"
+                />
+              </div>
+              <div>
+                <label className="label">Address</label>
+                <textarea
+                  className="textarea textarea-bordered w-full"
+                  rows={3}
+                  value={profile.address}
+                  onChange={(e) =>
+                    setProfile({ ...profile, address: e.target.value })
+                  }
+                  placeholder="Street, City, State, ZIP"
+                />
+              </div>
 
-      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="p-4 bg-base-200 rounded shadow">
-          <p className="font-medium">Agreement Accepted On</p>
-          <p className="text-sm text-gray-500">
-            {userRole === "member" &&
-            agreement &&
-            agreement.status === "checked"
-              ? agreement.acceptedAt
-                ? new Date(agreement.acceptedAt).toLocaleDateString()
-                : new Date(agreement.requestDate).toLocaleDateString()
-              : "Not Available"}
-          </p>
-        </div>
+              <button
+                type="submit"
+                className={`btn btn-primary mt-2 ${
+                  saving ? "btn-disabled" : "hover:opacity-90"
+                }`}
+                disabled={saving}
+              >
+                {saving ? "Saving…" : "Save Changes"}
+              </button>
+            </form>
+          </div>
 
-        <div className="p-4 bg-base-200 rounded shadow">
-          <p className="font-medium">Floor</p>
-          <p className="text-sm text-gray-500">
-            {agreement ? agreement.floor : "None"}
-          </p>
-        </div>
-
-        <div className="p-4 bg-base-200 rounded shadow">
-          <p className="font-medium">Block</p>
-          <p className="text-sm text-gray-500">
-            {agreement ? agreement.block : "None"}
-          </p>
-        </div>
-
-        <div className="p-4 bg-base-200 rounded shadow">
-          <p className="font-medium">Apartment No</p>
-          <p className="text-sm text-gray-500">
-            {agreement ? agreement.number : "None"}
-          </p>
-        </div>
-
-        <div className="p-4 bg-base-200 rounded shadow">
-          <p className="font-medium">Monthly Rent</p>
-          <p className="text-sm text-gray-500">
-            {agreement ? `${agreement.rent}৳` : "None"}
-          </p>
-        </div>
-      </div>
-
-      {agreement && userRole === "member" && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded">
-          <h4 className="font-semibold text-green-800 mb-2">
-            Agreement Details
-          </h4>
-          <div className="text-sm text-green-700">
-            <p>
-              <strong>Requested On:</strong>{" "}
-              {new Date(agreement.requestDate).toLocaleDateString()}
-            </p>
-            <p>
-              <strong>Location:</strong> Floor {agreement.floor}, Block{" "}
-              {agreement.block}, Room {agreement.number}
-            </p>
+          {/* Quick Info Strip */}
+          <div className="bg-base-200 p-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-center text-sm">
+            <div>
+              <p className="font-medium">Phone</p>
+              <p className="text-base-content/70 break-all">
+                {profile.phone || "—"}
+              </p>
+            </div>
+            <div className="col-span-2 md:col-span-3">
+              <p className="font-medium">Address</p>
+              <p className="text-base-content/70">{profile.address || "—"}</p>
+            </div>
           </div>
         </div>
-      )}
-    </div>
+      </Container>
+    </Section>
   );
 };
 

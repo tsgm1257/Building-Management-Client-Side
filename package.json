@@ -25,6 +25,7 @@
     "react-leaflet": "^5.0.0",
     "react-router": "^7.6.3",
     "react-ts-typewriter": "^0.1.8-b",
+    "recharts": "^3.1.2",
     "swiper": "^11.2.10",
     "tailwindcss": "^4.1.11"
   },

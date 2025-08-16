@@ -3,6 +3,7 @@ import MainLayout from "./layout/MainLayout";
 import DashboardLayout from "./layout/DashboardLayout";
 import PrivateRoute from "./routes/PrivateRoute";
 import ApartmentDetails from "./pages/ApartmentDetails";
+import Overview from "./pages/dashboard/Overview";
 
 import Home from "./pages/Home";
 import Apartments from "./pages/Apartments";
@@ -18,6 +19,7 @@ import MakeAnnouncement from "./pages/dashboard/admin/MakeAnnouncement";
 import ManageMembers from "./pages/dashboard/admin/ManageMembers";
 import ManageCoupons from "./pages/dashboard/admin/ManageCoupons";
 import AdminProfile from "./pages/dashboard/admin/AdminProfile";
+import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
 import "./App.css";
@@ -27,14 +29,13 @@ const router = createBrowserRouter([
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: "/", element: <Home /> },
-      { path: "/apartments", element: <Apartments /> },
-      {
-        path: "/apartments/:id",
-        element: <ApartmentDetails />,
-      },
-      { path: "/login", element: <Login /> },
-      { path: "/register", element: <Register /> },
+      { index: true, element: <Home /> }, // default "/"
+      { path: "apartments", element: <Apartments /> },
+      { path: "apartments/:id", element: <ApartmentDetails /> },
+      { path: "login", element: <Login /> },
+      { path: "register", element: <Register /> },
+      { path: "contact", element: <Contact /> },
+
       { path: "*", element: <NotFound /> },
     ],
   },
@@ -46,10 +47,19 @@ const router = createBrowserRouter([
       </PrivateRoute>
     ),
     children: [
+      // Default /dashboard → Overview
+      {
+        index: true,
+        element: (
+          <PrivateRoute requiredRole={["admin", "user", "member"]}>
+            <Overview />
+          </PrivateRoute>
+        ),
+      },
       {
         path: "my-profile",
         element: (
-          <PrivateRoute requiredRole={["user", "member"]}>
+          <PrivateRoute requiredRole={["user", "member", "admin"]}>
             <UserProfile />
           </PrivateRoute>
         ),
@@ -57,7 +67,7 @@ const router = createBrowserRouter([
       {
         path: "announcements",
         element: (
-          <PrivateRoute requiredRole={["user", "member"]}>
+          <PrivateRoute requiredRole={["user", "member", "admin"]}>
             <Announcements />
           </PrivateRoute>
         ),
@@ -65,7 +75,7 @@ const router = createBrowserRouter([
       {
         path: "make-payment",
         element: (
-          <PrivateRoute requiredRole="member">
+          <PrivateRoute requiredRole={["member", "admin"]}>
             <MakePayment />
           </PrivateRoute>
         ),
@@ -73,7 +83,7 @@ const router = createBrowserRouter([
       {
         path: "payment-history",
         element: (
-          <PrivateRoute requiredRole="member">
+          <PrivateRoute requiredRole={["member", "admin"]}>
             <PaymentHistory />
           </PrivateRoute>
         ),
