@@ -1,12 +1,18 @@
-import { useState, useMemo } from "react";
-import { Link } from "react-router";
+// src/pages/Apartments.jsx
+import { useState, useMemo, useContext } from "react";
+import { Link, useNavigate } from "react-router";
 import { useApartments } from "../hooks/useApartments";
 import toast from "react-hot-toast";
 import Section from "../components/Section";
 import Container from "../components/Container";
 import Card from "../components/Card";
+import { AuthContext } from "../providers/AuthProvider";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Apartments = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
 
   // existing min/max filters you already had
@@ -15,10 +21,10 @@ const Apartments = () => {
   const [tempMinRent, setTempMinRent] = useState("");
   const [tempMaxRent, setTempMaxRent] = useState("");
 
-  // NEW: sort by price
-  const [sortBy, setSortBy] = useState(""); // "", "price_asc", "price_desc"
+  // new sort state (kept simple; default 'recent')
+  const [sortBy, setSortBy] = useState("recent");
 
-  // existing request-sent tracking
+  // track which apartments the user already submitted requests for
   const [submittedIds, setSubmittedIds] = useState([]);
 
   const { data, isLoading, error, refetch } = useApartments({
@@ -27,19 +33,32 @@ const Apartments = () => {
     maxRent,
   });
 
-  const apartments = data?.apartments || [];
+  const apartments = Array.isArray(data?.apartments)
+    ? data.apartments
+    : Array.isArray(data)
+    ? data
+    : [];
 
   const filteredSorted = useMemo(() => {
     let arr = [...apartments];
 
-    // client-side sort by rent
-    if (sortBy === "price_asc") {
-      arr.sort((a, b) => (a?.rent ?? 0) - (b?.rent ?? 0));
-    } else if (sortBy === "price_desc") {
-      arr.sort((a, b) => (b?.rent ?? 0) - (a?.rent ?? 0));
+    if (minRent) arr = arr.filter((a) => Number(a.rent) >= Number(minRent));
+    if (maxRent) arr = arr.filter((a) => Number(a.rent) <= Number(maxRent));
+
+    if (sortBy === "high") {
+      arr.sort((a, b) => Number(b.rent) - Number(a.rent));
+    } else if (sortBy === "low") {
+      arr.sort((a, b) => Number(a.rent) - Number(b.rent));
+    } else {
+      // "recent" — assume newer first by createdAt (fallback to _id)
+      arr.sort((a, b) => {
+        const tA = new Date(a.createdAt || 0).getTime() || 0;
+        const tB = new Date(b.createdAt || 0).getTime() || 0;
+        return tB - tA;
+      });
     }
     return arr;
-  }, [apartments, sortBy]);
+  }, [apartments, sortBy, minRent, maxRent]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -49,14 +68,42 @@ const Apartments = () => {
     refetch?.();
   };
 
+  // REAL agreement creation (POST)
   const handleAgreement = async (apt) => {
     try {
-      // your existing request code (left intact if you have it elsewhere)
-      // await submitAgreement(apt);
+      if (!user) {
+        toast.error("Please log in to apply");
+        navigate("/auth");
+        return;
+      }
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${API_URL}/api/agreements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          apartmentId: apt._id,
+          block: apt.block,
+          number: apt.number,
+          floor: apt.floor,
+          rent: apt.rent,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Failed with status ${res.status}`);
+      }
+
       setSubmittedIds((prev) => [...prev, apt._id]);
       toast.success("Agreement request submitted");
-    } catch {
-      toast.error("Failed to submit request");
+    } catch (err) {
+      console.error("Agreement request failed:", err);
+      toast.error(err?.message || "Failed to submit request");
     }
   };
 
@@ -68,51 +115,42 @@ const Apartments = () => {
   return (
     <Section>
       <Container>
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
-          {/* Filter form */}
-          <form
-            onSubmit={handleSearch}
-            className="flex flex-wrap items-end gap-3"
-          >
-            <div className="flex flex-col">
-              <label className="text-sm mb-1">Min Rent</label>
-              <input
-                type="number"
-                placeholder="Min"
-                className="input input-bordered w-40"
-                value={tempMinRent}
-                onChange={(e) => setTempMinRent(e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-sm mb-1">Max Rent</label>
-              <input
-                type="number"
-                placeholder="Max"
-                className="input input-bordered w-40"
-                value={tempMaxRent}
-                onChange={(e) => setTempMaxRent(e.target.value)}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary hover:opacity-90">
-              Search
-            </button>
-          </form>
+        {/* Filters + sort */}
+        <form
+          onSubmit={handleSearch}
+          className="mb-6 grid grid-cols-1 md:grid-cols-4 gap-3"
+        >
+          <input
+            type="number"
+            min="0"
+            value={tempMinRent}
+            onChange={(e) => setTempMinRent(e.target.value)}
+            className="input input-bordered w-full"
+            placeholder="Min rent"
+          />
+          <input
+            type="number"
+            min="0"
+            value={tempMaxRent}
+            onChange={(e) => setTempMaxRent(e.target.value)}
+            className="input input-bordered w-full"
+            placeholder="Max rent"
+          />
 
-          {/* Sort control */}
-          <div className="flex flex-col">
-            <label className="text-sm mb-1">Sort by</label>
-            <select
-              className="select select-bordered w-56"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="">Default</option>
-              <option value="price_asc">Price: Low to High</option>
-              <option value="price_desc">Price: High to Low</option>
-            </select>
-          </div>
-        </div>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value)}
+            className="select select-bordered w-full"
+          >
+            <option value="recent">Sort: Recent</option>
+            <option value="low">Sort: Price (Low → High)</option>
+            <option value="high">Sort: Price (High → Low)</option>
+          </select>
+
+          <button type="submit" className="btn btn-primary w-full">
+            Apply Filters
+          </button>
+        </form>
 
         {/* Apartment Grid - uniform cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -147,9 +185,13 @@ const Apartments = () => {
                   Floor: <span className="font-medium">{apt.floor}</span>
                 </p>
                 <p className="text-sm">
-                  Monthly Rent:{" "}
-                  <span className="font-medium">
-                    {apt.rent?.toLocaleString()} ৳
+                  Rooms: <span className="font-medium">{apt.size}</span>
+                </p>
+                <p className="text-sm">
+                  Rent:{" "}
+                  <span className="font-semibold">
+                    {apt.rent}
+                    <span className="opacity-70">৳/mo</span>
                   </span>
                 </p>
               </div>
@@ -157,9 +199,9 @@ const Apartments = () => {
           ))}
         </div>
 
-        {/* Pagination (if your hook supports it) */}
-        {data?.totalPages > 1 && (
-          <div className="mt-8 flex items-center justify-center gap-2">
+        {/* Pagination */}
+        {data?.totalPages && data.totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-4">
             <button
               className="btn btn-outline btn-sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
