@@ -7,8 +7,7 @@ import Overview from "./pages/dashboard/Overview";
 
 import Home from "./pages/Home";
 import Apartments from "./pages/Apartments";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+import Auth from "./pages/Auth";
 
 import UserProfile from "./pages/dashboard/UserProfile";
 import MakePayment from "./pages/dashboard/member/MakePayment";
@@ -32,8 +31,9 @@ const router = createBrowserRouter([
       { index: true, element: <Home /> }, // default "/"
       { path: "apartments", element: <Apartments /> },
       { path: "apartments/:id", element: <ApartmentDetails /> },
-      { path: "login", element: <Login /> },
-      { path: "register", element: <Register /> },
+      { path: "/auth", element: <Auth /> },
+      { path: "/login", element: <Auth /> },
+      { path: "/register", element: <Auth /> },
       { path: "contact", element: <Contact /> },
 
       { path: "*", element: <NotFound /> },
@@ -64,6 +64,7 @@ const router = createBrowserRouter([
           </PrivateRoute>
         ),
       },
+      
       {
         path: "announcements",
         element: (

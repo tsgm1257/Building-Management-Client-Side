@@ -46,7 +46,7 @@ const Navbar = () => {
   // Protected routes to expose in dropdown (works for both member/admin)
   const dashboardProtected = [
     { to: "/dashboard", label: "Overview" },
-    { to: "/dashboard/user/profile", label: "My Profile" },
+    { to: "/dashboard/my-profile", label: "My Profile" },
     { to: "/dashboard/member/make-payment", label: "Make Payment" },
     { to: "/dashboard/member/payment-history", label: "Payment History" },
     { to: "/dashboard/announcements", label: "Announcements" },
@@ -149,7 +149,7 @@ const Navbar = () => {
                     className="dropdown-content menu p-2 shadow bg-base-100 text-base-content rounded-box w-56"
                   >
                     <li>
-                      <NavLink to="/dashboard/user/profile">My Profile</NavLink>
+                      <NavLink to="/dashboard/my-profile">My Profile</NavLink>
                     </li>
                     <li>
                       <button onClick={handleLogout}>Logout</button>

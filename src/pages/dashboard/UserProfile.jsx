@@ -26,7 +26,7 @@ const UserProfile = () => {
       }
       try {
         const token = await user.getIdToken();
-        const res = await fetch(`${API_URL}/api/user/me`, {
+        const res = await fetch(`${API_URL}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.ok) {
@@ -69,7 +69,7 @@ const UserProfile = () => {
     try {
       setSaving(true);
       const token = await user.getIdToken();
-      const res = await fetch(`${API_URL}/api/user`, {
+      const res = await fetch(`${API_URL}/api/users`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -6,43 +6,58 @@ import {
   signOut,
   updateProfile,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { app } from "../firebase/firebase.config";
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const register = (email, password) => {
+  const register = async (email, password) => {
     setLoading(true);
-    return createUserWithEmailAndPassword(auth, email, password);
+    const res = await createUserWithEmailAndPassword(auth, email, password);
+    return res;
   };
 
-  const login = (email, password) => {
+  const login = async (email, password) => {
     setLoading(true);
-    return signInWithEmailAndPassword(auth, email, password);
+    const res = await signInWithEmailAndPassword(auth, email, password);
+    return res;
   };
 
-  const logout = () => {
+  // NEW: Google sign-in (popup)
+  const loginWithGoogle = async () => {
     setLoading(true);
-    return signOut(auth);
+    const res = await signInWithPopup(auth, googleProvider);
+    return res;
   };
 
-  const updateUserProfile = (profile) => {
-    return updateProfile(auth.currentUser, profile);
+  const logout = async () => {
+    setLoading(true);
+    await signOut(auth);
+  };
+
+  const updateUserProfile = async ({ displayName, photoURL }) => {
+    if (!auth.currentUser) return;
+    await updateProfile(auth.currentUser, {
+      displayName: displayName ?? auth.currentUser.displayName ?? "",
+      photoURL: photoURL ?? auth.currentUser.photoURL ?? "",
+    });
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+    const unsub = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
     });
-
-    return () => unsubscribe();
+    return () => unsub();
   }, []);
 
   const authInfo = {
@@ -50,6 +65,7 @@ const AuthProvider = ({ children }) => {
     loading,
     register,
     login,
+    loginWithGoogle,
     logout,
     updateUserProfile,
   };
