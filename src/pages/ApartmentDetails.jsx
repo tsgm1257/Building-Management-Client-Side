@@ -1,18 +1,26 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams, Link } from "react-router";
-import Section from "../components/Section";
+// src/pages/ApartmentDetails.jsx
+import { useEffect, useMemo, useState, useContext } from "react";
+import { useLocation, useParams, Link, useNavigate } from "react-router";
 import Container from "../components/Container";
+import Section from "../components/Section";
+import { AuthContext } from "../providers/AuthProvider";
+import toast from "react-hot-toast";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const ApartmentDetails = () => {
   const { id } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const aptFromState = location.state?.apt;
+
+  const { user, role } = useContext(AuthContext);
 
   const [apt, setApt] = useState(aptFromState || null);
   const [loading, setLoading] = useState(!aptFromState);
   const [error, setError] = useState("");
+  const [requested, setRequested] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (aptFromState) return;
@@ -36,6 +44,49 @@ const ApartmentDetails = () => {
     if (!apt) return "Apartment Details";
     return `Block ${apt.block} • Apt ${apt.number}`;
   }, [apt]);
+
+  const handleApplyAgreement = async () => {
+    try {
+      if (!user) {
+        toast.error("Please log in to apply");
+        navigate("/auth");
+        return;
+      }
+      if (!apt) return;
+      if (!API_URL) throw new Error("VITE_API_URL is not defined");
+
+      setSubmitting(true);
+      const token = await user.getIdToken();
+
+      const res = await fetch(`${API_URL}/api/agreements`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          apartmentId: apt._id,
+          block: apt.block,
+          number: apt.number,
+          floor: apt.floor,
+          rent: apt.rent,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || `Failed with status ${res.status}`);
+      }
+
+      setRequested(true);
+      toast.success("Agreement request submitted");
+    } catch (err) {
+      console.error("Agreement request failed:", err);
+      toast.error(err?.message || "Failed to submit request");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) return <div className="text-center py-12">Loading...</div>;
   if (error) return <div className="text-center py-12">{error}</div>;
@@ -70,19 +121,32 @@ const ApartmentDetails = () => {
               </p>
             </div>
 
-            <div className="mt-6 flex gap-3">
-              <Link
-                to="/apartments"
-                className="btn btn-outline hover:opacity-90"
-              >
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link to="/apartments" className="btn btn-outline">
                 Back to All
               </Link>
-              <a
-                href="/dashboard/make-payment"
-                className="btn btn-primary hover:opacity-90"
-              >
-                Proceed to Payment
-              </a>
+
+              {/* If role is "member" -> Pay (go to dashboard make-payment).
+                  If role is "user" -> Apply (create agreement). */}
+              {role === "member" ? (
+                <Link to="/dashboard/make-payment" className="btn btn-neutral">
+                  Pay
+                </Link>
+              ) : (
+                <button
+                  className={`btn btn-neutral ${
+                    requested || submitting ? "btn-disabled" : ""
+                  }`}
+                  onClick={handleApplyAgreement}
+                  disabled={requested || submitting}
+                >
+                  {requested
+                    ? "Request Sent"
+                    : submitting
+                    ? "Submitting..."
+                    : "Apply"}
+                </button>
+              )}
             </div>
           </div>
         </div>

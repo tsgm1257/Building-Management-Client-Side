@@ -1,7 +1,9 @@
+// src/pages/dashboard/member/MakePayment.jsx
 import { CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../../providers/AuthProvider";
 import { FaMoneyCheckAlt } from "react-icons/fa";
+import Container from "../../../components/Container";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -52,7 +54,9 @@ const MakePayment = () => {
         if (!API_URL) throw new Error("VITE_API_URL is not defined");
         const token = await user.getIdToken();
         const res = await fetch(
-          `${API_URL}/api/payments/user?email=${encodeURIComponent(user.email)}`,
+          `${API_URL}/api/payments/user?email=${encodeURIComponent(
+            user.email
+          )}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         if (res.ok) {
@@ -77,14 +81,17 @@ const MakePayment = () => {
         const discounted = Math.max(0, rent * (1 - discount / 100));
         const amountInCents = Math.round(discounted * 100);
 
-        const res = await fetch(`${API_URL}/api/payments/create-payment-intent`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ amount: amountInCents }),
-        });
+        const res = await fetch(
+          `${API_URL}/api/payments/create-payment-intent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ amount: amountInCents }),
+          }
+        );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
@@ -179,7 +186,9 @@ const MakePayment = () => {
 
       if (!paymentRes.ok) {
         const text = await paymentRes.text().catch(() => "");
-        throw new Error(`Failed to save payment record: ${paymentRes.status} ${text}`);
+        throw new Error(
+          `Failed to save payment record: ${paymentRes.status} ${text}`
+        );
       }
 
       setMessage("Payment successful!");
@@ -204,37 +213,41 @@ const MakePayment = () => {
 
   if (message && !agreement) {
     return (
-      <div className="max-w-xl mx-auto p-6">
-        <h2 className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2 text-error">
-          <FaMoneyCheckAlt className="text-2xl" />
-          Make Payment
-        </h2>
-        <p className="text-center text-red-600">{message}</p>
-      </div>
+      <Container className="py-6">
+        <div className="p-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-6 text-error">
+            <FaMoneyCheckAlt className="text-2xl" />
+            <h2 className="text-3xl font-bold">Make Payment</h2>
+          </div>
+          <p className="text-error">{message}</p>
+        </div>
+      </Container>
     );
   }
 
   if (paymentSuccess) {
     return (
-      <div className="max-w-xl mx-auto p-6 text-center">
-        <h2 className="text-3xl font-bold mb-6 flex items-center justify-center gap-2 text-success">
-          <FaMoneyCheckAlt className="text-2xl" />
-          Payment Successful!
-        </h2>
-        <p className="text-green-600 font-semibold mb-4">{message}</p>
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setPaymentSuccess(false);
-            setMonth("");
-            setDiscount(0);
-            setCouponCode("");
-            setMessage("");
-          }}
-        >
-          Make Another Payment
-        </button>
-      </div>
+      <Container className="py-6">
+        <div className="p-6 text-center">
+          <div className="flex items-center justify-center gap-2 mb-6 text-success">
+            <FaMoneyCheckAlt className="text-2xl" />
+            <h2 className="text-3xl font-bold">Payment Successful!</h2>
+          </div>
+          <p className="text-success font-semibold mb-4">{message}</p>
+          <button
+            className="btn btn-neutral"
+            onClick={() => {
+              setPaymentSuccess(false);
+              setMonth("");
+              setDiscount(0);
+              setCouponCode("");
+              setMessage("");
+            }}
+          >
+            Make Another Payment
+          </button>
+        </div>
+      </Container>
     );
   }
 
@@ -244,87 +257,121 @@ const MakePayment = () => {
       : agreement?.rent || 0;
 
   return (
-    <div className="max-w-xl mx-auto p-6">
-      <h2 className="text-3xl font-bold mb-6 text-center flex items-center justify-center gap-2 text-primary">
-        <FaMoneyCheckAlt className="text-2xl" />
-        Make Payment
-      </h2>
+    <Container className="py-6">
+      <div className="p-6">
+        <div className="flex items-center justify-center gap-2 mb-6 text-primary">
+          <FaMoneyCheckAlt className="text-2xl" />
+          <h2 className="text-3xl font-bold">Make Payment</h2>
+        </div>
 
-      <div className="bg-base-100 p-6 rounded shadow-md">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" value={user.email} readOnly className="input input-bordered w-full" />
-          <input type="text" value={`Floor ${agreement.floor}`} readOnly className="input input-bordered w-full" />
-          <input type="text" value={`Block ${agreement.block}`} readOnly className="input input-bordered w-full" />
-          <input type="text" value={`Room ${agreement.number}`} readOnly className="input input-bordered w-full" />
-          <input type="text" value={`${agreement.rent}৳`} readOnly className="input input-bordered w-full" />
-
-          {discount > 0 && (
-            <p className="text-green-600 font-semibold">
-              Discounted Rent: {discountedAmount}৳
-            </p>
-          )}
-
-          <div className="flex gap-2">
+        <div className="bg-base-100 p-6 rounded shadow-md border border-base-300">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
-              value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value)}
-              placeholder="Coupon Code"
+              value={user.email}
+              readOnly
               className="input input-bordered w-full"
             />
-            <button type="button" className="btn btn-secondary" onClick={handleApplyCoupon}>
-              Apply
-            </button>
-          </div>
+            <input
+              type="text"
+              value={`Floor ${agreement.floor}`}
+              readOnly
+              className="input input-bordered w-full"
+            />
+            <input
+              type="text"
+              value={`Block ${agreement.block}`}
+              readOnly
+              className="input input-bordered w-full"
+            />
+            <input
+              type="text"
+              value={`Room ${agreement.number}`}
+              readOnly
+              className="input input-bordered w-full"
+            />
+            <input
+              type="text"
+              value={`${agreement.rent}৳`}
+              readOnly
+              className="input input-bordered w-full"
+            />
 
-          <input
-            type="month"
-            required
-            className="input input-bordered w-full"
-            value={month}
-            onChange={(e) => setMonth(e.target.value)}
-          />
-
-          {month &&
-            existingPayments.some(
-              (p) => String(p.month).toLowerCase() === String(month).toLowerCase()
-            ) && (
-              <p className="text-error font-semibold">
-                Payment for {month} already exists!
+            {discount > 0 && (
+              <p className="text-success font-semibold">
+                Discounted Rent: {discountedAmount}৳
               </p>
             )}
 
-          <CardElement className="p-4 border rounded bg-white" />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={couponCode}
+                onChange={(e) => setCouponCode(e.target.value)}
+                placeholder="Coupon Code"
+                className="input input-bordered w-full"
+              />
+              <button
+                type="button"
+                className="btn btn-neutral"
+                onClick={handleApplyCoupon}
+              >
+                Apply
+              </button>
+            </div>
 
-          <button
-            className="btn btn-primary w-full"
-            type="submit"
-            disabled={
-              !stripe ||
-              !clientSecret ||
-              (month &&
-                existingPayments.some(
-                  (p) => String(p.month).toLowerCase() === String(month).toLowerCase()
-                ))
-            }
-          >
-            Pay Now
-          </button>
-        </form>
+            <input
+              type="month"
+              required
+              className="input input-bordered w-full"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+            />
 
-        {message && !paymentSuccess && (
-          <p
-            className={`mt-4 text-center font-semibold ${
-              message.includes("successful") || message.includes("applied")
-                ? "text-green-600"
-                : "text-red-600"
-            }`}
-          >
-            {message}
-          </p>
-        )}
+            {month &&
+              existingPayments.some(
+                (p) =>
+                  String(p.month).toLowerCase() === String(month).toLowerCase()
+              ) && (
+                <p className="text-error font-semibold">
+                  Payment for {month} already exists!
+                </p>
+              )}
+
+            <CardElement className="p-4 border rounded bg-base-100" />
+
+            <button
+              className="btn btn-neutral w-full"
+              type="submit"
+              disabled={
+                !stripe ||
+                !clientSecret ||
+                (month &&
+                  existingPayments.some(
+                    (p) =>
+                      String(p.month).toLowerCase() ===
+                      String(month).toLowerCase()
+                  ))
+              }
+            >
+              Pay Now
+            </button>
+          </form>
+
+          {message && !paymentSuccess && (
+            <p
+              className={`mt-4 text-center font-semibold ${
+                message.includes("successful") || message.includes("applied")
+                  ? "text-success"
+                  : "text-error"
+              }`}
+            >
+              {message}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+    </Container>
   );
 };
 

@@ -1,7 +1,9 @@
+// src/pages/dashboard/admin/MakeAnnouncement.jsx
 import { useState, useContext } from "react";
 import { AuthContext } from "../../../providers/AuthProvider";
 import { FaBullhorn } from "react-icons/fa";
 import { MdOutlineAnnouncement } from "react-icons/md";
+import Container from "../../../components/Container";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -43,56 +45,60 @@ const MakeAnnouncement = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-base-100 rounded shadow">
-      <h2 className="text-3xl font-bold flex items-center gap-2 mb-6 text-center justify-center text-primary">
-        <FaBullhorn />
-        Make Announcement
-      </h2>
+    <Container className="py-6">
+      <div className="p-6">
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <FaBullhorn className="text-2xl text-primary" />
+          <h2 className="text-3xl font-bold">Make Announcement</h2>
+        </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="form-control w-full">
-          <div className="label">
-            <span className="label-text font-medium">Title</span>
-          </div>
-          <input
-            className="input input-bordered w-full"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter announcement title"
-            required
-          />
-        </label>
+        <div className="bg-base-100 rounded shadow border border-base-300 p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <label className="form-control w-full">
+              <div className="label">
+                <span className="label-text font-medium">Title</span>
+              </div>
+              <input
+                className="input input-bordered w-full"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter announcement title"
+                required
+              />
+            </label>
 
-        <label className="form-control w-full">
-          <div className="label">
-            <span className="label-text font-medium">Description</span>
-          </div>
-          <textarea
-            className="textarea textarea-bordered w-full"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Write announcement details"
-            rows={5}
-            required
-          />
-        </label>
+            <label className="form-control w-full">
+              <div className="label">
+                <span className="label-text font-medium">Description</span>
+              </div>
+              <textarea
+                className="textarea textarea-bordered w-full"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Write announcement details"
+                rows={5}
+                required
+              />
+            </label>
 
-        <button
-          className="btn btn-primary w-full flex items-center gap-2"
-          type="submit"
-        >
-          <MdOutlineAnnouncement className="text-xl" />
-          Post Announcement
-        </button>
-      </form>
+            <button
+              className="btn btn-neutral w-full flex items-center gap-2"
+              type="submit"
+            >
+              <MdOutlineAnnouncement className="text-xl" />
+              Post Announcement
+            </button>
+          </form>
 
-      {message && (
-        <p className="mt-4 text-center font-semibold text-sm text-green-600">
-          {message}
-        </p>
-      )}
-    </div>
+          {message && (
+            <p className="mt-4 text-center font-semibold text-sm text-success">
+              {message}
+            </p>
+          )}
+        </div>
+      </div>
+    </Container>
   );
 };
 

@@ -45,16 +45,16 @@ const Navbar = () => {
     ],
     member: [
       { to: "/dashboard/my-profile", label: "My Profile" },
-      { to: "/dashboard/member/make-payment", label: "Make Payment" },
-      { to: "/dashboard/member/payment-history", label: "Payment History" },
+      { to: "/dashboard/make-payment", label: "Make Payment" },
+      { to: "/dashboard/payment-history", label: "Payment History" },
       { to: "/dashboard/announcements", label: "Announcements" },
     ],
     admin: [
-      { to: "/dashboard/admin/profile", label: "Admin Profile" },
-      { to: "/dashboard/admin/manage-members", label: "Manage Members" },
-      { to: "/dashboard/admin/make-announcement", label: "Make Announcement" },
-      { to: "/dashboard/admin/requests", label: "Agreement Requests" },
-      { to: "/dashboard/admin/manage-coupons", label: "Manage Coupons" },
+      { to: "/dashboard/admin-profile", label: "Admin Profile" },
+      { to: "/dashboard/manage-members", label: "Manage Members" },
+      { to: "/dashboard/make-announcement", label: "Make Announcement" },
+      { to: "/dashboard/agreement-requests", label: "Agreement Requests" },
+      { to: "/dashboard/manage-coupons", label: "Manage Coupons" },
     ],
   };
 

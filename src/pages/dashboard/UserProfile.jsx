@@ -1,6 +1,6 @@
+// src/pages/dashboard/UserProfile.jsx
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../providers/AuthProvider";
-import Section from "../../components/Section";
 import Container from "../../components/Container";
 import toast from "react-hot-toast";
 
@@ -96,12 +96,14 @@ const UserProfile = () => {
   if (loading) return <div className="p-6 text-center">Loading profile…</div>;
 
   return (
-    <Section>
-      <Container>
-        <div className="max-w-2xl mx-auto bg-base-100 rounded-xl shadow border border-base-300 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-6 text-center">My Profile</h2>
+    <Container className="py-6">
+      <div className="p-6">
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <h2 className="text-3xl font-bold">My Profile</h2>
+        </div>
 
+        <div className="bg-base-100 rounded-xl shadow border border-base-300 overflow-hidden">
+          <div className="p-6">
             <div className="flex flex-col items-center text-center space-y-4 mb-6">
               <img
                 src={
@@ -191,8 +193,8 @@ const UserProfile = () => {
             </div>
           </div>
         </div>
-      </Container>
-    </Section>
+      </div>
+    </Container>
   );
 };
 
