@@ -8,7 +8,7 @@ This is the frontend of the Building Management System built using React and Vit
 
 ## Live Site
 
-[https://building-management-913d1.web.app](https://building-management-913d1.web.app)
+[https://my-building.netlify.app](https://my-building.netlify.app)
 
 ---
 
