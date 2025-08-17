@@ -1,6 +1,7 @@
 # Building Management — Client Side
 
 ## Overview
+
 This is the frontend of the Building Management System built using React and Vite. It allows tenants to browse and apply for apartments, pay rent, use discount coupons, and access personalized dashboards. Admins can manage announcements, users, agreements, payments, and coupons.
 
 ---
@@ -61,9 +62,13 @@ To provide an organized and secure system for managing residential buildings —
 ---
 
 ## Screenshots
+
 ### Home
+
 ![Apartments](public/screenshots/apartments.png)
+
 ### Dashboard
+
 ![Dashboard](public/screenshots/dashboard.png)
 
 ## Environment Variables
@@ -71,7 +76,7 @@ To provide an organized and secure system for managing residential buildings —
 Create a `.env` file in the root of your client project:
 
 ```
-VITE_API_BASE_URL=https://building-management-server-woad-two.vercel.app
+VITE_API_BASE_URL=https://building-management-server-side-woad.vercel.app/
 VITE_FIREBASE_API_KEY=your_firebase_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
 VITE_FIREBASE_PROJECT_ID=your_project_id
@@ -113,4 +118,5 @@ npm run dev
 - `npm run preview` — Preview the production build
 
 ## Author
+
 Developed by Tanzeem Siddique
