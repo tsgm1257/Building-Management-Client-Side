@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 const API_URL = import.meta.env.VITE_API_URL;
 
 const UserProfile = () => {
-  const { user } = useContext(AuthContext);
+  const { user, role } = useContext(AuthContext);
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -17,6 +17,10 @@ const UserProfile = () => {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Rented apartment (for members)
+  const [agreement, setAgreement] = useState(null);
+  const [agreementLoading, setAgreementLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -61,6 +65,31 @@ const UserProfile = () => {
     };
     load();
   }, [user]);
+
+  // Load rented apartment details only for members
+  useEffect(() => {
+    const loadAgreement = async () => {
+      if (!user || role !== "member") return;
+      try {
+        setAgreementLoading(true);
+        const token = await user.getIdToken();
+        const res = await fetch(`${API_URL}/api/agreements/user`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.status === 404) {
+          setAgreement(null);
+        } else if (res.ok) {
+          const data = await res.json();
+          setAgreement(data);
+        }
+      } catch {
+        setAgreement(null);
+      } finally {
+        setAgreementLoading(false);
+      }
+    };
+    loadAgreement();
+  }, [user, role]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -120,6 +149,51 @@ const UserProfile = () => {
                 <p className="text-sm text-base-content/60">{profile.email}</p>
               </div>
             </div>
+
+            {/* Member-only: Rented apartment info */}
+            {role === "member" && (
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold mb-3">Rented Apartment</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-base-200/60 rounded-lg p-4">
+                  {agreementLoading ? (
+                    <p>Loading apartment info…</p>
+                  ) : agreement ? (
+                    <>
+                      <p>
+                        <span className="font-medium">Floor:</span>{" "}
+                        {agreement.floor}
+                      </p>
+                      <p>
+                        <span className="font-medium">Block:</span>{" "}
+                        {agreement.block}
+                      </p>
+                      <p>
+                        <span className="font-medium">Room No:</span>{" "}
+                        {agreement.number}
+                      </p>
+                      <p>
+                        <span className="font-medium">Monthly Rent:</span>{" "}
+                        {Number(agreement.rent || 0).toLocaleString()} ৳
+                      </p>
+                      {agreement.requestDate && (
+                        <p className="sm:col-span-2">
+                          <span className="font-medium">Since:</span>{" "}
+                          {new Date(agreement.requestDate).toLocaleDateString()}
+                        </p>
+                      )}
+                      {agreement.status && (
+                        <p className="sm:col-span-2">
+                          <span className="font-medium">Status:</span>{" "}
+                          {agreement.status}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p>No rented apartment on file.</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <form onSubmit={handleSave} className="grid grid-cols-1 gap-4">
               <div>

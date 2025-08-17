@@ -4,6 +4,7 @@ import { NavLink, Link } from "react-router";
 import { AuthContext } from "../providers/AuthProvider";
 import ThemeToggle from "./ThemeToggle";
 import { FiMenu } from "react-icons/fi";
+import Container from "./Container";
 
 const linkBase =
   "px-3 py-2 text-sm md:text-base transition-colors duration-200";
@@ -63,7 +64,7 @@ const Navbar = () => {
     : [];
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-base-100 text-base-content border-b border-base-200 dark:bg-neutral dark:text-neutral-content dark:border-white/10">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-base-100 text-base-content border-b border-base-200 dark:bg-neutral dark:text-neutral-content dark:border-white/10"><Container className="p-0">
       <div className="max-w-7xl mx-auto">
         <div className="navbar px-4 md:px-6 h-16">
           {/* Left: Brand */}
@@ -206,6 +207,7 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+      </Container>
     </div>
   );
 };

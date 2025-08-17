@@ -13,7 +13,7 @@ import Location from "../components/Location";
 import Coupons from "../components/Coupons";
 
 const Home = () => (
-  <>
+  <section>
     <Banner />
     <AboutBuilding />
     <FeaturedApartments />
@@ -27,7 +27,7 @@ const Home = () => (
     <FAQ />
     <Coupons />
     <Location />
-  </>
+  </section>
 );
 
 export default Home;
